@@ -38,4 +38,4 @@ flowchart LR
 
 ## 归属与许可
 
-个人开源二次开发，新增实现使用 AI 辅助；原有推理引擎、缓存、调度与部署能力属于上游贡献者。本次贡献以基线后 diff 为准。保留 Apache-2.0 LICENSE、NOTICE、贡献历史和原始 [README](README.upstream.md)。
+新增实现使用 AI 辅助；原有推理引擎、缓存、调度与部署能力属于上游贡献者。本次贡献以基线后 diff 为准。保留 Apache-2.0 LICENSE、NOTICE、贡献历史和原始 [README](README.upstream.md)。
