@@ -192,7 +192,7 @@
             }
         },
         "k8s-aibom": {
-            "description": "Optional runtime AI inventory (k8s-aibom). When enabled, a lightweight, unprivileged controller generates a CycloneDX 1.6 ML-BOM for AI workloads in namespaces labeled aibom.k8saibom.dev/enabled=true — including the vLLM deployments this chart manages. Disabled by default; nothing is inventoried without both this flag and the namespace opt-in label.",
+            "description": "Optional runtime AI inventory (k8s-aibom). When enabled, a lightweight, unprivileged controller generates a CycloneDX 1.6 ML-BOM for AI workloads in namespaces labeled aibom.k8saibom.dev/enabled=true \u2014 including the vLLM deployments this chart manages. Disabled by default; nothing is inventoried without both this flag and the namespace opt-in label.",
             "type": "object",
             "properties": {
                 "enabled": {
@@ -891,7 +891,8 @@
                         "prefixaware",
                         "kvaware",
                         "disaggregated_prefill",
-                        "disaggregated_prefill_orchestrated"
+                        "disaggregated_prefill_orchestrated",
+                        "tenant-affinity"
                     ]
                 },
                 "securityContext": {
@@ -1026,6 +1027,57 @@
                         "secretName": {
                             "description": "Name of the existing Kubernetes secret that contains the vLLM API key",
                             "type": "string"
+                        }
+                    }
+                },
+                "tenantRouting": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "existingSecret": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "key": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "tenants": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "required": [
+                                    "pools"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                    "pools": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "max_waiting": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "max_kv_usage": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "affinity_skew": {
+                                        "type": "number",
+                                        "minimum": 0
+                                    }
+                                }
+                            }
                         }
                     }
                 }

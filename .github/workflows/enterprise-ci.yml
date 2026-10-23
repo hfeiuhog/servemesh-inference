@@ -1,0 +1,22 @@
+name: Enterprise extension CI
+on:
+  workflow_dispatch:
+  push:
+    branches: [enterprise]
+    paths: ['enterprise/**', 'src/vllm_router/**', 'helm/**', '.github/workflows/enterprise-ci.yml']
+permissions:
+  contents: read
+jobs:
+  tenant-router:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e . pytest pytest-asyncio
+      - run: python -m pytest -o addopts='' enterprise/tests -q
+      - uses: azure/setup-helm@v4.3.0
+      - run: helm lint helm -f enterprise/values-shared-inference.yaml
+      - run: helm template servemesh helm -f enterprise/values-shared-inference.yaml > /tmp/servemesh-rendered.yaml
+      - run: python enterprise/check_helm.py /tmp/servemesh-rendered.yaml

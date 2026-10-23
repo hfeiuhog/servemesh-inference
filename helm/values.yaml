@@ -480,6 +480,13 @@ servingEngineSpec:
 
 # -- Router configuration
 routerSpec:
+  # -- Signed tenant pool routing; requires a router image built from this fork.
+  tenantRouting:
+    enabled: false
+    existingSecret:
+      name: ""
+      key: "signing-key"
+    tenants: {}
   # -- Whether to enable the router service
   enableRouter: true
   # -- The docker image of the router. The following values are defaults:

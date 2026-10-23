@@ -34,6 +34,7 @@ from vllm_router.routers.routing_logic import (
     PrefixAwareRouter,
     PriorityRouter,
     SessionRouter,
+    TenantAffinityRouter,
 )
 from vllm_router.service_discovery import get_service_discovery
 from vllm_router.services.request_service.rewriter import (
@@ -81,6 +82,10 @@ from vllm_router.services.metrics_service import (
 logger = init_logger(__name__)
 
 _HOP_BY_HOP_HEADERS = {
+    "x-servemesh-tenant",
+    "x-servemesh-session",
+    "x-servemesh-expires",
+    "x-servemesh-signature",
     "host",
     "connection",
     "keep-alive",
@@ -588,7 +593,7 @@ async def route_general_request(
             )
 
     logger.debug(f"Routing request {request_id} for model: {requested_model}")
-    if request_endpoint:
+    if request_endpoint and not isinstance(request.app.state.router, TenantAffinityRouter):
         server_url = endpoints[0].url
         logger.debug(
             f"Routing request {request_id} to engine with Id: {endpoints[0].Id}"
@@ -623,7 +628,12 @@ async def route_general_request(
         f"Debug session extraction - Router type: {type(request.app.state.router).__name__}"
     )
     logger.debug(f"Debug session extraction - Session key config: {session_key}")
-    logger.debug(f"Debug session extraction - Request headers: {dict(request.headers)}")
+    safe_headers = {
+        key: "[redacted]" if key.lower().startswith("x-servemesh-")
+        or key.lower() in {"authorization", "cookie", "x-api-key"} else value
+        for key, value in request.headers.items()
+    }
+    logger.debug(f"Debug session extraction - Request headers: {safe_headers}")
     logger.debug(f"Debug session extraction - Extracted session ID: {session_id}")
 
     logger.info(
@@ -646,7 +656,7 @@ async def route_general_request(
             remaining = [ep for ep in endpoints if ep.url not in error_urls]
             if not remaining:
                 break
-            if request_endpoint:
+            if request_endpoint and not isinstance(request.app.state.router, TenantAffinityRouter):
                 server_url = remaining[0].url
             elif isinstance(
                 request.app.state.router,

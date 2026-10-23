@@ -1,0 +1,8 @@
+{{- if and .Values.routerSpec.enableRouter .Values.routerSpec.tenantRouting.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-servemesh-policy
+data:
+  policy.json: {{ dict "tenants" .Values.routerSpec.tenantRouting.tenants | toJson | quote }}
+{{- end }}

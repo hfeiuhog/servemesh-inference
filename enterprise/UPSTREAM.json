@@ -1,0 +1,8 @@
+{
+  "project": "ServeMesh",
+  "upstream": "https://github.com/vllm-project/production-stack",
+  "base_commit": "cd5c5fc2e87ede3ea6f1c97a0120560bbf697e36",
+  "extension_branch": "enterprise",
+  "scope": "共享 GPU 集群上的多租户推理流量治理",
+  "assisted_implementation": true
+}

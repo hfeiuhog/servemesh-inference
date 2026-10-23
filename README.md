@@ -1,150 +1,41 @@
-# vLLM Production Stack: reference stack for production vLLM deployment
+# ServeMesh · 企业多租户推理服务平台
 
-| [**Blog**](https://lmcache.github.io) | [**Docs**](https://docs.vllm.ai/projects/production-stack) | [**Production-Stack Slack Channel**](https://communityinviter.com/apps/vllm-dev/join-vllm-developers-slack) | [**LMCache Slack**](https://join.slack.com/t/lmcacheworkspace/shared_invite/zt-2viziwhue-5Amprc9k5hcIdXT7XevTaQ) | [**Interest Form**](https://forms.gle/mQfQDUXbKfp2St1z7) |
+在 [vLLM production-stack](https://github.com/vllm-project/production-stack) 的真实 Router、Helm 部署和可观测体系中，增加面向共享推理集群的租户流量治理。
 
-<p align="center">
-  <b>English</b> · <a href="README.zh.md">简体中文</a>
-</p>
+[![Enterprise CI](https://github.com/hfeiuhog/servemesh-production-stack/actions/workflows/enterprise-ci.yml/badge.svg?branch=enterprise)](https://github.com/hfeiuhog/servemesh-production-stack/actions/workflows/enterprise-ci.yml)
 
-## Latest News
+## 场景与改动
 
-- 📄 [Official documentation](https://docs.vllm.ai/projects/production-stack) released for production-stack!
-- ✨ [Cloud Deployment Tutorials](https://github.com/vllm-project/production-stack/blob/main/tutorials) for Lambda Labs, AWS EKS, Google GCP are out!
-- 🛤️ 2026 roadmap is released! [Join the discussion now](https://github.com/vllm-project/production-stack/issues/855)!
-- 🔥 vLLM Production Stack is released! Check out our [release blogs](https://blog.lmcache.ai/2025-01-21-stack-release) posted on January 22, 2025.
+交互问答和离线批处理共享集群时，需要受控的模型池、稳定会话路由与拥塞保护。新增 `tenant-affinity` 路由策略，直接接入上游路由工厂和请求路径。
 
-## Community Events
+| 上游基础 | 本次新增 |
+|---|---|
+| vLLM 推理、LMCache、Kubernetes/Helm、指标采集 | 短期 HMAC 签名租户/会话上下文 |
+| 动态端点发现、健康检查、队列/KV 指标 | 租户允许池过滤、未知指标拒绝、队列/KV 使用保护 |
+| Router 和 OpenAI 兼容代理 | 负载候选集内的加权前置评分与稳定会话选择 |
+| Prometheus/Grafana 部署基础 | 决策计数指标、Secret 引用、策略 ConfigMap 与 Helm schema |
 
-We host **bi-weekly** community meetings at the following timeslot:
-
-- Every other Tuesdays at 5:30 PM PT – [Add to Calendar](https://drive.google.com/uc?export=download&id=1D4SqQiqzdSx_xsEwS0QTd592zd3Xourh)
-
-All are welcome to join!
-
-## Introduction
-
-**vLLM Production Stack** project provides a reference implementation on how to build an inference stack on top of vLLM, which allows you to:
-
-- 🚀 Scale from a single vLLM instance to a distributed vLLM deployment without changing any application code
-- 💻 Monitor the metrics through a web dashboard
-- 😄 Enjoy the performance benefits brought by request routing and KV cache offloading
-
-## Step-By-Step Tutorials
-
-0. How To [*Install Kubernetes (kubectl, helm, minikube, etc)*](https://github.com/vllm-project/production-stack/blob/main/tutorials/00-install-kubernetes-env.md)?
-1. How to [*Deploy Production Stack on Major Cloud Platforms (AWS, GCP, Lambda Labs, Azure)*](https://github.com/vllm-project/production-stack/blob/main/tutorials/cloud_deployments)?
-2. How To [*Set up a Minimal vLLM Production Stack*](https://github.com/vllm-project/production-stack/blob/main/tutorials/01-minimal-helm-installation.md)?
-3. How To [*Customize vLLM Configs (optional)*](https://github.com/vllm-project/production-stack/blob/main/tutorials/02-basic-vllm-config.md)?
-4. How to [*Load Your LLM Weights*](https://github.com/vllm-project/production-stack/blob/main/tutorials/03-load-model-from-pv.md)?
-5. How to [*Launch Different LLMs in vLLM Production Stack*](https://github.com/vllm-project/production-stack/blob/main/tutorials/04-launch-multiple-model.md)?
-6. How to [*Enable KV Cache Offloading with LMCache*](https://github.com/vllm-project/production-stack/blob/main/tutorials/05-offload-kv-cache.md)?
-
-## Architecture
-
-The stack is set up using [Helm](https://helm.sh/docs/), and contains the following key parts:
-
-- **Serving engine**: The vLLM engines that run different LLMs.
-- **Request router**: Directs requests to appropriate backends based on routing keys or session IDs to maximize KV cache reuse.
-- **Observability stack**: monitors the metrics of the backends through [Prometheus](https://github.com/prometheus/prometheus) + [Grafana](https://grafana.com/)
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/8f05e7b9-0513-40a9-9ba9-2d3acca77c0c" alt="Architecture of the stack" width="80%"/>
-</p>
-
-## Roadmap
-
-We are actively working on this project and will release the following features soon. Please stay tuned!
-
-- **Autoscaling** based on vLLM-specific metrics
-- Support for **disaggregated prefill**
-- **Router improvements** (e.g., more performant router using non-python languages, KV-cache-aware routing algorithm, better fault tolerance, etc)
-
-## Deploying the stack via Helm
-
-### Prerequisites
-
-- A running Kubernetes (K8s) environment with GPUs
-  - Run `cd utils && bash install-minikube-cluster.sh`
-  - Or follow our [tutorial](tutorials/00-install-kubernetes-env.md)
-
-### Deployment
-
-vLLM Production Stack can be deployed via helm charts. Clone the repo to local and execute the following commands for a minimal deployment:
-
-```bash
-git clone https://github.com/vllm-project/production-stack.git
-cd production-stack/
-helm repo add vllm https://vllm-project.github.io/production-stack
-helm install vllm vllm/vllm-stack -f tutorials/assets/values-01-minimal-example.yaml
+```mermaid
+flowchart LR
+  A[可信接入层] -->|签名上下文| B[production-stack Router]
+  B --> C[租户允许模型池]
+  C --> D[健康与队列/KV 保护]
+  D --> E[负载窗口与会话亲和]
+  E --> F[vLLM 后端]
+  B --> G[低基数决策指标]
 ```
 
-The deployed stack provides the same [**OpenAI API interface**](https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html?ref=blog.mozilla.ai#openai-compatible-server) as vLLM, and can be accessed through kubernetes service.
+实现位于 `src/vllm_router/tenant_policy.py` 及上游 `routing_logic.py`、请求转发和启动路径。受保护策略会关闭直接端点绕行，并剥离签名上下文头后再转发。外部 provider 和跨租户语义缓存组合在启动时被阻止。
 
-To validate the installation and send a query to the stack, refer to [this tutorial](tutorials/01-minimal-helm-installation.md).
+## 部署入口
 
-For more information about customizing the helm chart, please refer to [values.yaml](https://github.com/vllm-project/production-stack/blob/main/helm/values.yaml) and our other [tutorials](https://github.com/vllm-project/production-stack/tree/main/tutorials).
+阅读 [部署与故障演练](enterprise/IMPLEMENTATION.md)，使用 [合成配置](enterprise/values-shared-inference.yaml) 叠加上游 Helm values。
+必须构建并指定包含本分支修改的 Router 镜像；上游现成镜像不包含本扩展。签名密钥通过预置 Kubernetes Secret 注入，不能写入 values 或仓库。签名辅助工具仅在可信接入层使用。
 
-### Uninstall
+本功能是路由策略，不提供 GPU 硬隔离、严格配额、全服务鉴权或网络隔离。签名上下文具有短期 bearer 属性，需由可信入口剥离客户端自带头并重新签发。平台控制 API 应置于独立管理网络；GPU 集群吞吐和成本需另行实测。
 
-```bash
-helm uninstall vllm
-```
+[验证记录](enterprise/VALIDATION.md) · [数据边界](enterprise/DATA_POLICY.md) · [固定基线](enterprise/UPSTREAM.json)
 
-## Grafana Dashboard
+## 归属与许可
 
-### Features
-
-The Grafana dashboard provides the following insights:
-
-1. **Available vLLM Instances**: Displays the number of healthy instances.
-2. **Request Latency Distribution**: Visualizes end-to-end request latency.
-3. **Time-to-First-Token (TTFT) Distribution**: Monitors response times for token generation.
-4. **Number of Running Requests**: Tracks the number of active requests per instance.
-5. **Number of Pending Requests**: Tracks requests waiting to be processed.
-6. **GPU KV Usage Percent**: Monitors GPU KV cache usage.
-7. **GPU KV Cache Hit Rate**: Displays the hit rate for the GPU KV cache.
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/05766673-c449-4094-bdc8-dea6ac28cb79" alt="Grafana dashboard to monitor the deployment" width="80%"/>
-</p>
-
-### Configuration
-
-See the details in [`helm/README.md`](./helm/README.md#Observability)
-
-## Router
-
-The router ensures efficient request distribution among backends. It supports:
-
-- Routing to endpoints that run different models
-- Exporting observability metrics for each serving engine instance, including QPS, time-to-first-token (TTFT), number of pending/running/finished requests, and uptime
-- Automatic service discovery and fault tolerance via the Kubernetes API
-- Model aliases
-- Multiple routing algorithms:
-  - Round-robin routing
-  - Session-ID based routing
-  - Prefix-aware routing (WIP)
-
-Please refer to the [router documentation](./src/vllm_router/README.md) for more details.
-
-## Contributing
-
-We welcome and value any contributions and collaborations. Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for how to get involved.
-
-## License
-
-This project is licensed under Apache License 2.0. See the `LICENSE` file for details.
-
-## Sponsors
-
-We are grateful to our sponsors who support our development and benchmarking efforts:
-
-<p align="center">
-  <a href="https://gmicloud.ai">
-    <img src="https://cdn.prod.website-files.com/6683d8c52e4e62685a8d90cf/67a0a0064683945b0cf77f25_GMI%20Cloud%20Logo_Black.svg" alt="GMI Cloud Logo" width="200"/>
-  </a>
-</p>
-
----
-
-For any issues or questions, feel free to open an issue or contact us ([@ruizhang0101](https://github.com/ruizhang0101), [@ApostaC](https://github.com/ApostaC), [@YuhanLiu11](https://github.com/YuhanLiu11), [@Shaoting-Feng](https://github.com/Shaoting-Feng)).
+个人开源二次开发，新增实现使用 AI 辅助；原有推理引擎、缓存、调度与部署能力属于上游贡献者。本次贡献以基线后 diff 为准。保留 Apache-2.0 LICENSE、NOTICE、贡献历史和原始 [README](README.upstream.md)。

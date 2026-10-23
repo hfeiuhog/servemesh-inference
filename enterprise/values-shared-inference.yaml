@@ -1,0 +1,18 @@
+# Use a router image built from this fork, not the unchanged upstream image.
+routerSpec:
+  tenantRouting:
+    enabled: true
+    existingSecret:
+      name: servemesh-context-key
+      key: signing-key
+    tenants:
+      synthetic-finance:
+        pools: [qwen-chat]
+        max_waiting: 8
+        max_kv_usage: 0.85
+        affinity_skew: 2
+      synthetic-operations:
+        pools: [qwen-batch]
+        max_waiting: 32
+        max_kv_usage: 0.95
+        affinity_skew: 4

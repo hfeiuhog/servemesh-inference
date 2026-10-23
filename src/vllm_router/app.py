@@ -294,6 +294,11 @@ def initialize_all(app: FastAPI, args):
     initialize_feature_gates(args.feature_gates)
     # Check if the SemanticCache feature gate is enabled
     feature_gates = get_feature_gates()
+    if args.routing_logic == "tenant-affinity":
+        if args.external_providers_config or feature_gates.is_enabled("SemanticCache"):
+            raise ValueError("Tenant routing does not permit external-provider bypass or an unpartitioned semantic cache")
+        if semantic_cache_available and is_semantic_cache_enabled():
+            raise ValueError("Restart without semantic cache before enabling tenant routing")
     if semantic_cache_available:
         if feature_gates.is_enabled("SemanticCache"):
             # The feature gate is enabled, explicitly enable the semantic cache

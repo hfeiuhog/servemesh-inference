@@ -245,6 +245,7 @@ def parse_args():
             "disaggregated_prefill",
             "disaggregated_prefill_orchestrated",
             "priority",
+            "tenant-affinity",
         ],
         help="The routing logic to use",
     )

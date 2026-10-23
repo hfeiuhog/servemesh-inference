@@ -48,8 +48,11 @@ from vllm_router.service_discovery import EndpointInfo
 from vllm_router.stats.engine_stats import EngineStats
 from vllm_router.stats.request_stats import RequestStats
 from vllm_router.utils import SingletonABCMeta
+from vllm_router.tenant_policy import BackendSnapshot, TenantPolicy, TenantRoutingError
+from prometheus_client import Counter
 
 logger = init_logger(__name__)
+tenant_route_decisions = Counter("servemesh_route_decisions_total", "Tenant routing decisions", ["result"])
 
 
 class RoutingLogic(str, enum.Enum):
@@ -61,6 +64,7 @@ class RoutingLogic(str, enum.Enum):
     DISAGGREGATED_PREFILL = "disaggregated_prefill"
     DISAGGREGATED_PREFILL_ORCHESTRATED = "disaggregated_prefill_orchestrated"
     PRIORITY = "priority"
+    TENANT_AFFINITY = "tenant-affinity"
 
 
 # The single tunable of the `loadaware` routing logic. beta = 1.0 reads as: an
@@ -1217,12 +1221,47 @@ class DisaggregatedPrefillOrchestratedRouter(RoutingInterface):
 
 
 # Instead of managing a global _global_router, we can define the initialization functions as:
+class TenantAffinityRouter(RoutingInterface):
+    """Keep signed tenant requests in assigned pools under load guards."""
+
+    def __init__(self):
+        if hasattr(self, "_initialized"):
+            return
+        self.policy = TenantPolicy.from_file(
+            os.environ["SERVEMESH_POLICY_FILE"], os.environ["SERVEMESH_SIGNING_KEY"].encode()
+        )
+        self._initialized = True
+
+    def route_request(self, endpoints, engine_stats, request_stats, request) -> str:
+        try:
+            tenant = request.headers.get("x-servemesh-tenant", "")
+            session = request.headers.get("x-servemesh-session", "")
+            policy = self.policy.authenticate(tenant, session,
+                request.headers.get("x-servemesh-expires", ""), request.headers.get("x-servemesh-signature", ""))
+            snapshots = []
+            for endpoint in endpoints:
+                stats = engine_stats.get(endpoint.url)
+                if stats is None:
+                    continue
+                snapshots.append(BackendSnapshot(endpoint.url, endpoint.model_label,
+                    stats.num_running_requests, stats.num_queuing_requests, stats.gpu_cache_usage_perc,
+                    endpoint.healthy, endpoint.sleep))
+            selected = self.policy.select(tenant, session, policy, snapshots)
+            tenant_route_decisions.labels(result="selected").inc()
+            return selected
+        except TenantRoutingError as exc:
+            tenant_route_decisions.labels(result="unauthorized" if exc.status in (401, 403) else "capacity").inc()
+            raise HTTPException(exc.status, str(exc)) from exc
+
+
 def initialize_routing_logic(
     routing_logic: RoutingLogic, *args, **kwargs
 ) -> RoutingInterface:
     if routing_logic == RoutingLogic.ROUND_ROBIN:
         logger.info("Initializing round-robin routing logic")
         router = RoundRobinRouter()
+    elif routing_logic == RoutingLogic.TENANT_AFFINITY:
+        router = TenantAffinityRouter()
     elif routing_logic == RoutingLogic.SESSION_BASED:
         logger.info(f"Initializing session-based routing logic with kwargs: {kwargs}")
         router = SessionRouter(kwargs.get("session_key"))
@@ -1298,6 +1337,7 @@ def reconfigure_routing_logic(
 def get_routing_logic() -> RoutingInterface:
     # Look up in our singleton registry which router (if any) has been created.
     for cls in (
+        TenantAffinityRouter,
         SessionRouter,
         RoundRobinRouter,
         KvawareRouter,
@@ -1315,6 +1355,7 @@ def get_routing_logic() -> RoutingInterface:
 def cleanup_routing_logic():
     """Clean up all routing logic instances."""
     for cls in (
+        TenantAffinityRouter,
         SessionRouter,
         RoundRobinRouter,
         KvawareRouter,

@@ -59,6 +59,15 @@ spec:
           {{- toYaml .Values.routerSpec.containerSecurityContext | nindent 10 }}
         {{- end }}
         env:
+          {{- if .Values.routerSpec.tenantRouting.enabled }}
+          - name: SERVEMESH_POLICY_FILE
+            value: /etc/servemesh/policy.json
+          - name: SERVEMESH_SIGNING_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "tenantRouting.existingSecret.name is required" .Values.routerSpec.tenantRouting.existingSecret.name }}
+                key: {{ required "tenantRouting.existingSecret.key is required" .Values.routerSpec.tenantRouting.existingSecret.key }}
+          {{- end }}
           {{- if .Values.routerSpec.hf_token }}
           - name: HF_TOKEN
             value: "{{ .Values.routerSpec.hf_token }}"
@@ -115,7 +124,11 @@ spec:
           - "{{ required "When using static service discovery, .Values.routerSpec.staticModels is a required value" .Values.routerSpec.staticModels }}"
           {{- end }}
           - "--routing-logic"
+          {{- if .Values.routerSpec.tenantRouting.enabled }}
+          - "tenant-affinity"
+          {{- else }}
           - "{{ .Values.routerSpec.routingLogic }}"
+          {{- end }}
           {{- if .Values.routerSpec.prefixMinMatchLength }}
           - "--prefix-min-match-length"
           - "{{ .Values.routerSpec.prefixMinMatchLength }}"
@@ -181,12 +194,26 @@ spec:
         readinessProbe:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with .Values.routerSpec.extraVolumeMounts }}
+        {{- if or .Values.routerSpec.tenantRouting.enabled .Values.routerSpec.extraVolumeMounts }}
         volumeMounts:
+          {{- if .Values.routerSpec.tenantRouting.enabled }}
+          - name: servemesh-policy
+            mountPath: /etc/servemesh
+            readOnly: true
+          {{- end }}
+          {{- with .Values.routerSpec.extraVolumeMounts }}
           {{- toYaml . | nindent 10 }}
+          {{- end }}
         {{- end }}
-      {{- with .Values.routerSpec.extraVolumes }}
+      {{- if or .Values.routerSpec.tenantRouting.enabled .Values.routerSpec.extraVolumes }}
       volumes:
+        {{- if .Values.routerSpec.tenantRouting.enabled }}
+        - name: servemesh-policy
+          configMap:
+            name: {{ .Release.Name }}-servemesh-policy
+        {{- end }}
+        {{- with .Values.routerSpec.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}
