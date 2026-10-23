@@ -2,7 +2,7 @@
 
 在 [vLLM production-stack](https://github.com/vllm-project/production-stack) 的真实 Router、Helm 部署和可观测体系中，增加面向共享推理集群的租户流量治理。
 
-[![Enterprise CI](https://github.com/hfeiuhog/servemesh-production-stack/actions/workflows/enterprise-ci.yml/badge.svg?branch=enterprise)](https://github.com/hfeiuhog/servemesh-production-stack/actions/workflows/enterprise-ci.yml)
+[![Enterprise CI](https://github.com/hfeiuhog/servemesh-inference/actions/workflows/enterprise-ci.yml/badge.svg?branch=enterprise)](https://github.com/hfeiuhog/servemesh-inference/actions/workflows/enterprise-ci.yml)
 
 ## 场景与改动
 
