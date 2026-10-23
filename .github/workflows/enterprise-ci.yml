@@ -17,6 +17,7 @@ jobs:
       - run: pip install -e . pytest pytest-asyncio
       - run: python -m pytest -o addopts='' enterprise/tests -q
       - uses: azure/setup-helm@v4.3.0
+          - run: helm dependency build helm
       - run: helm lint helm -f enterprise/values-shared-inference.yaml
       - run: helm template servemesh helm -f enterprise/values-shared-inference.yaml > /tmp/servemesh-rendered.yaml
       - run: python enterprise/check_helm.py /tmp/servemesh-rendered.yaml
