@@ -39,3 +39,12 @@ flowchart LR
 ## 归属与许可
 
 新增实现使用 AI 辅助；原有推理引擎、缓存、调度与部署能力属于上游贡献者。本次贡献以基线后 diff 为准。保留 Apache-2.0 LICENSE、NOTICE、贡献历史和原始 [README](README.upstream.md)。
+
+## 开放协作
+
+本仓库公开，欢迎 Clone、Fork、反馈问题和提交改进。
+请将本扩展的 PR 提交到 **`hfeiuhog/servemesh-inference` 的 `enterprise` 分支**。
+
+[报告问题 / 功能建议](https://github.com/hfeiuhog/servemesh-inference/issues/new/choose) · [贡献指南](CONTRIBUTING.md) · [同步说明](enterprise/COLLABORATION.md)
+
+上游基础能力与贡献者署名继续保留。本 fork 的提交、测试和扩展代码可供核对；上游是否接受贡献以对应 PR 的审核结果为准。

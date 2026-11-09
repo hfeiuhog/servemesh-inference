@@ -4,5 +4,7 @@
   "base_commit": "cd5c5fc2e87ede3ea6f1c97a0120560bbf697e36",
   "extension_branch": "enterprise",
   "scope": "共享 GPU 集群上的多租户推理流量治理",
-  "assisted_implementation": true
+  "assisted_implementation": true,
+  "last_synced_commit": "405a2fa79992754d31f754c31b1eabb7183a540e",
+  "last_synced_date": "2026-11-09"
 }

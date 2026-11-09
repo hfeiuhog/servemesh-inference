@@ -1,91 +1,43 @@
-# Contributing
+# Contributing to ServeMesh
 
-Thank you for your contribution to production-stack! As a potential contributor, your changes and ideas are welcome at any hour of the day or night, weekdays, weekends, and holidays. Please do not ever hesitate to ask a question or send a pull request.
+欢迎使用、Fork、报告问题和提交改进。本仓库是 `vllm-project/production-stack` 的公开扩展 fork。
+向本仓库提交 PR 时，请选择 `hfeiuhog/servemesh-inference` 的 `enterprise` 分支作为目标。
 
-## Submitting a Proposal
+## Use this project
 
-For **major changes, new features, or significant architectural modifications**, please **submit a proposal** under [proposals/](proposals/) folder using the [designated template](proposals/TEMPLATE.md) before contributing code. This ensures alignment with the project's goals, allows maintainers and contributors to provide feedback early, and helps prevent unnecessary rework.
+Clone or fork this public repository. Read the setup instructions in [README.md](README.md).
+Keep the existing licenses, notices, and attribution. Some upstream directories have separate terms.
 
-Once submitted, your proposal will be reviewed by the maintainers, and discussions may take place before approval. We encourage open collaboration, so feel free to participate in the discussion and refine your proposal based on feedback.
+## Report an extension issue
 
-*For small changes like bug fixes, documentation updates, minor optimizations, and simple features, feel free to directly create an issue or PR without the proposal.*
+Open an [issue](https://github.com/hfeiuhog/servemesh-inference/issues/new/choose) with a small, reproducible example.
+Use synthetic data. Remove secrets, customer records, and private documents.
+For private upstream security reports, follow the [upstream security policy](https://github.com/vllm-project/production-stack/security/policy).
+Do not post vulnerabilities or secrets in a public issue.
 
-## Opening a Pull Request
+## Submit an extension change
 
-Before submitting your pull request, please ensure it meets the following criteria. This helps maintain code quality and streamline the review process.
+1. Fork `hfeiuhog/servemesh-inference` and create a feature branch from `enterprise`.
+2. Make one focused change. Keep upstream code and attribution intact.
+3. Run the relevant checks from [Enterprise CI](.github/workflows/enterprise-ci.yml).
+4. Open a pull request to `hfeiuhog/servemesh-inference`, with `enterprise` as the base branch.
+5. Describe the problem, changed behavior, test results, and compatibility limits.
 
-Follow the standard GitHub workflow:
+New contributors' Actions runs may need maintainer approval.
+PRs do not grant direct write access. The maintainer reviews and merges changes.
+Disclose material AI assistance and verify the submitted result.
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Submit a pull request with a detailed description.
+## Contribute to the upstream project
 
-<h2>PR Title and Classification</h2>
-<p>Please try to classify PRs for easy understanding of the type of changes. The PR title is prefixed appropriately to indicate the type of change. Please use one of the following:</p>
-<ul>
-    <li><code>[Bugfix]</code> for bug fixes.</li>
-    <li><code>[CI/Build]</code> for build or continuous integration improvements.</li>
-    <li><code>[Doc]</code> for documentation fixes and improvements.</li>
-    <li><code>[Feat]</code> for new features in the cluster (e.g., autoscaling, disaggregated prefill, etc.).</li>
-    <li><code>[Router]</code> for changes to the <code>vllm_router</code> (e.g., routing algorithm, router observability, etc.).</li>
-    <li><code>[Misc]</code> for PRs that do not fit the above categories. Please use this sparingly.</li>
-</ul>
-<p><strong>Note:</strong> If the PR spans more than one category, please include all relevant prefixes.</p>
+The GitHub **Contribute** button proposes changes to `vllm-project/production-stack`.
+That is separate from making this fork public or accepting changes here.
+Follow the [upstream contribution guide](CONTRIBUTING.upstream.md) and use a clean branch for one upstream change.
+Keep this fork's branding, business-specific workflows, and maintenance files out of an upstream PR.
 
-## Code Quality and Validation
+A submitted PR is a review request. Only a merged PR is an accepted upstream contribution.
+The current extension uses AI assistance; it does not imply upstream approval or production deployment.
 
-### Linter Checks
+## Sync this fork
 
-Linter checks are parts of our github workflows. To pass all linter checks, please use <code>pre-commit</code> to format your code. It is installed as follows:
-
-```bash
-uv sync --all-extras --all-groups
-uv run pre-commit install
-```
-
-It will run automatically before every commit. You can also run it manually on
-all files with:
-
-```bash
-uv run pre-commit run --all-files
-```
-
-There are a subset of hooks which require additional dependencies that you may
-not have installed in your development environment (i.e. Docker and non-Python
-packages). These are configured to only run in the `manual` `pre-commit` stage.
-In CI they are run in the `pre-commit-manual` job, and locally they can be run
-with:
-
-```bash
-# Runs all hooks including manual stage hooks
-uv run pre-commit run --all-files --hook-stage manual
-# Runs only the manual stage hook shellcheck
-uv run pre-commit run --all-files --hook-stage manual shellcheck
-```
-
-If any of these hooks are failing in CI but you cannot run them locally, you
-can identify what needs changing by examining the GitHub Actions logs in your
-pull request.
-
-> You can read more about `pre-commit` at [https://pre-commit.com](https://pre-commit.com).
-
-### Github Workflows
-
-The PR must pass all GitHub workflows, which include:
-
-- Router E2E tests
-- Functionality tests of the helm chart
-
-If any test fails, please check GitHub Actions for details on the failure. If you believe the error is unrelated to your PR, please explain your reasoning in the PR comments.
-
-## Adding Examples and Tests
-
-Please include sufficient examples in your PR. Unit tests and integrations are also welcome, and you’re encouraged to contribute them in future PRs.
-
-<h2>DCO and Signed-off-by</h2>
-<p>When contributing changes to this project, you must agree to the <a href="https://github.com/vllm-project/vllm/blob/main/DCO">DCO</a>. Commits must include a <code>Signed-off-by:</code> header which certifies agreement with the terms of the DCO.</p>
-<p>Using <code>-s</code> with <code>git commit</code> will automatically add this header.</p>
-
-<h2>What to Expect for the Reviews</h2>
-
-We aim to address all PRs in a timely manner. If no one reviews your PR within 5 days, please @-mention one of ruizhang0101, YuhanLiu11, Shaoting-Feng or ApostaC.
+Read [同步与协作说明](enterprise/COLLABORATION.md).
+Keep extension work on `enterprise`. Merge upstream updates and resolve conflicts before publishing.
